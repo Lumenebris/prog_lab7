@@ -1,0 +1,4 @@
+[{"floor": 13,"number": 666, "shape": "star", "walls": {"material": "obsidian"}, "x": 6,"y": 6, "created": "2011-12-03T10:15:30+01:00"},
+  {"floor": 10, "number": 34, "shape": "square", "walls": {"material": "stone"}, "x": 12,"y": 7, "created": "2011-12-03T10:15:30+01:00"},
+  {"floor": 5, "number": 218, "shape": "rectangle", "walls":{"material": "brick"}, "x": 4, "y": 5, "created": "2011-12-03T10:15:30+01:00"},
+  {"floor": 7, "number": 456, "shape": "trapezoid", "walls":{"material": "styrofoam"}, "x": 34, "y": 6, "created": "2011-12-03T10:15:30+01:00"}]

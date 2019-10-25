@@ -2,12 +2,15 @@ package tale;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+
 import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.util.Calendar;
 import java.util.Hashtable;
+import java.util.TimeZone;
 
 public class Room implements Serializable {
     private int id;
@@ -17,7 +20,7 @@ public class Room implements Serializable {
     private Wall walls;
     private int x;
     private int y;
-    private ZonedDateTime created;
+    private OffsetDateTime created;
 
     public Room (int floor, int number, String shape, Wall walls, int x, int y) {
         this.floor = floor;
@@ -26,10 +29,10 @@ public class Room implements Serializable {
         this.walls = walls;
         this.x = x;
         this.y = y;
-        this.created = ZonedDateTime.now();
+        this.created = OffsetDateTime.now();
     }
 
-    public Room(int floor, int number, String shape, Wall walls, int x, int y, ZonedDateTime created) {
+    public Room(int floor, int number, String shape, Wall walls, int x, int y, OffsetDateTime created) {
         this.floor = floor;
         this.number = number;
         this.shape = shape;
@@ -47,7 +50,9 @@ public class Room implements Serializable {
         this.walls = new Wall(rs.getString("wall_material"));
         this.x = rs.getInt("x");
         this.y = rs.getInt("y");
-        this.created = rs.getTimestamp("created").toLocalDateTime().atZone(ZoneId.systemDefault());
+        this.created = OffsetDateTime.ofInstant(
+                rs.getTimestamp("created").toInstant(),
+                ZoneId.systemDefault());
     }
 
     public String getParameters() {
@@ -160,7 +165,7 @@ public class Room implements Serializable {
         return y;
     }
 
-    public ZonedDateTime getCreated() {
+    public OffsetDateTime getCreated() {
         return created;
     }
 

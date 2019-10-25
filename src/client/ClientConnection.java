@@ -2,6 +2,8 @@ package client;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import misc.Utils;
+import sun.security.provider.MD5;
 import tale.Room;
 
 import java.io.*;
@@ -19,6 +21,9 @@ public class ClientConnection {
     private static ObjectOutputStream toServer;
     private static ObjectInputStream fromServer;
     private static int port;
+    private String login;
+    private String password;
+    private String sessionId;
 
     /**
      * Устанавливает активное соединение с сервером.
@@ -28,20 +33,37 @@ public class ClientConnection {
             fromKeyboard = scanner;
             String command;
             boolean flag = true;
-            System.out.println("Введите connect номер_порта");
+            System.out.println("Введите connect номер_порта логин пароль (система автоматически создаст нового пользователя с уникальным логином) " +
+                    "или help - для справки");
             try {
                 while (flag) {
                     command = fromKeyboard.nextLine();
-                    String[] parsedCommand = command.trim().split(" ", 2);
+                    String[] parsedCommand = command.trim().split(" ", 4);
                     switch (parsedCommand[0]) {
+                        case "help":
+                            printConnectUsage();
+                            break;
                         case "connect":
                             try {
+                                if (parsedCommand.length <= 1) {
+                                    printConnectUsage();
+                                    flag = true;
+                                    continue;
+                                }
                                 if (Integer.parseInt(parsedCommand[1]) < 0  || Integer.parseInt(parsedCommand[1]) > 65535)
                                     System.err.println("Порт сервера должен быть целым числом от 0 до 65535.");
                                 else {
                                     port = Integer.parseInt(parsedCommand[1]);
                                     System.out.println("Задан порт сервера: " + port);
                                     flag = false;
+                                }
+                                if (parsedCommand.length > 3) {
+                                    login = parsedCommand[2];
+                                    password = parsedCommand[3];
+                                } else {
+                                    System.err.println("Не заданы логин и/или пароль");
+                                    flag = true;
+                                    continue;
                                 }
                             } catch (NumberFormatException e){
                                 System.err.println("Номер порта задан неверно.");
@@ -62,29 +84,59 @@ public class ClientConnection {
                          ObjectInputStream inputStream = new ObjectInputStream(channel.socket().getInputStream())) {
                         toServer = outputStream;
                         fromServer = inputStream;
-                        interactiveMode();
+                        System.out.println((String) fromServer.readObject());
+                        if(login(login, password)) {
+                            interactiveMode();
+                        }
                         System.out.println("Завершение программы.");
+                        break;
+                    } catch (ClassNotFoundException e) {
+                        System.err.println("Класс не найден: " + e.getMessage());
                     }
                 } catch (IOException e) {
-                        System.err.println("Нет связи с сервером. Подключться ещё раз (введите {yes} или {no})?");
-                        String answer;
-                        while (!(answer = fromKeyboard.nextLine()).equals("yes")) {
-                            switch (answer) {
-                                case "yes":
-                                    break;
-                                case "no":
-                                    exit();
-                                    break;
-                                default:
-                                    System.out.println("Введите корректный ответ.");
-                            }
+                    System.err.println("Нет связи с сервером. Подключиться ещё раз (введите {yes} или {no})?");
+                    String answer;
+                    while (!(answer = fromKeyboard.nextLine()).equals("yes")) {
+                        switch (answer) {
+                            case "yes":
+                                break;
+                            case "no":
+                                exit();
+                                break;
+                            default:
+                                System.out.println("Введите корректный ответ.");
                         }
-                        System.out.print("Подключение ...");
-                        continue;
                     }
+                    System.out.print("Подключение ...");
+                    continue;
                 }
             }
         }
+    }
+
+    private void printConnectUsage() {
+        System.err.println("Использование:\nconnect <port> <login> <password>\n" +
+                "где,\n" +
+                "   port - порт, на котором слушает сервер\n" +
+                "   login - уникальный логин пользователя\n" +
+                "   password - пароль пользователя\n" +
+                "Если пользователь с таким логином не существует, то он будет зарегистрирован автоматически");
+    }
+
+    private boolean login(String login, String password) throws IOException, ClassNotFoundException {
+        if (login != null && password != null) {
+            toServer.writeObject("login " + login + " " + password);
+        }
+        String result = (String) fromServer.readObject();
+        if (Utils.isValidUUID(result)) {
+            sessionId = result;
+        } else {
+            sessionId = null;
+            System.out.println("Имя пользователя или пароль указаны неверно");
+            return false;
+        }
+        return true;
+    }
 
     /**
      * Парсит пользовательские команды и осуществляет обмен данными с сервером.
@@ -92,7 +144,6 @@ public class ClientConnection {
      */
     private void interactiveMode() throws IOException {
         try {
-            System.out.println((String) fromServer.readObject());
             String command;
             try {
                 while (!(command = fromKeyboard.nextLine()).equals("exit")) {
@@ -103,14 +154,20 @@ public class ClientConnection {
                     switch (parsedCommand[0]) {
                         case "":
                             break;
+                        case "login":
+                            if (parsedCommand.length > 2) {
+                                login(parsedCommand[1], parsedCommand[2]);
+                            } else {
+                                System.out.println("Необходимо указать логин и пароль");
+                            }
+                            break;
                         case "import":
                             try {
-                                if (parsedCommand.length > 3) {
+                                if (parsedCommand.length > 1) {
                                     toServer.writeObject(String.join(" ",
                                             parsedCommand[0], // import
                                             "'" + importingFile(parsedCommand[1]) + "'", // file
-                                            parsedCommand[2], // login
-                                            parsedCommand[3] // password
+                                            sessionId
                                     ));
                                     System.out.println((String) fromServer.readObject());
                                 } else {
@@ -125,7 +182,7 @@ public class ClientConnection {
                             }
                             break;
                         default:
-                            toServer.writeObject(command);
+                            toServer.writeObject(command + " " + sessionId);
                             System.out.println((String) fromServer.readObject());
                     }
                 }
@@ -180,7 +237,7 @@ public class ClientConnection {
     }
 
     /**
-    Отвечает за завершение работу клиентского приложения.
+     Отвечает за завершение работу клиентского приложения.
      */
     private void exit() {
         System.out.println("Завершение программы.");

@@ -12,6 +12,8 @@ import java.util.Map;
 public interface StorageManager {
     void save() throws SQLException;
 
+    void rollback() throws SQLException;
+
     void clear(User user) throws SQLException;
 
     int size() throws SQLException;
@@ -33,6 +35,8 @@ public interface StorageManager {
     Map<String, Room> getRooms(User user) throws SQLException;
 
     boolean add(User user) throws SQLException;
+
+    User getUser(String login) throws SQLException;
 
     User authenticate(String login, String password) throws SQLException;
 

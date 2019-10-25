@@ -10,6 +10,7 @@ import tale.JsonSyntaxMistakeException;
 import tale.Room;
 import tale.User;
 
+import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -86,6 +87,10 @@ public class FileStorageManager implements StorageManager {
         } catch (Exception ex) {
             System.out.println("Возникла непредвиденная ошибка. Коллекция не может быть сохранена.");
         }
+    }
+
+    @Override
+    public void rollback() throws SQLException {
     }
 
     @Override
@@ -182,6 +187,11 @@ public class FileStorageManager implements StorageManager {
     @Override
     public boolean add(User user) {
         return true;
+    }
+
+    @Override
+    public User getUser(String login) throws SQLException {
+        return null;
     }
 
     @Override

@@ -8,7 +8,7 @@ import tale.User;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.sql.*;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,11 +20,11 @@ public class DbStorageManager implements StorageManager {
     public DbStorageManager(String conn_param, String login, String password ) throws SQLException {
          this.db = DriverManager.getConnection(conn_param, login, password);
          db.setAutoCommit(false);
-         this.gson = new GsonBuilder().registerTypeAdapter(ZonedDateTime .class, new JsonDeserializer<ZonedDateTime>() {
+         this.gson = new GsonBuilder().registerTypeAdapter(OffsetDateTime.class, new JsonDeserializer<OffsetDateTime>() {
              @Override
-             public ZonedDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext
+             public OffsetDateTime deserialize(JsonElement json, Type type, JsonDeserializationContext
                      jsonDeserializationContext) throws JsonParseException {
-                 return ZonedDateTime.parse(json.getAsJsonPrimitive().getAsString());
+                 return OffsetDateTime.parse(json.getAsJsonPrimitive().getAsString());
              }
          }).create();
     }
@@ -32,6 +32,11 @@ public class DbStorageManager implements StorageManager {
     @Override
     public void save() throws SQLException {
         db.commit();
+    }
+
+    @Override
+    public void rollback() throws SQLException {
+        db.rollback();
     }
 
     @Override
@@ -176,7 +181,25 @@ public class DbStorageManager implements StorageManager {
     }
 
     @Override
+    public User getUser(String login) throws SQLException {
+        PreparedStatement st = db.prepareStatement("SELECT id, login, password FROM lena_laba7.users" +
+                " WHERE login = ?");
+        st.setString(1, login);
+        ResultSet rs = st.executeQuery();
+        User user = null;
+        if (rs.next()) {
+            user = new User(rs);
+        }
+        rs.close();
+        st.close();
+        return user;
+    }
+
+    @Override
     public boolean add(User user) throws SQLException {
+        if (getUser(user.getLogin()) != null) {
+            return false;
+        }
         PreparedStatement st = db.prepareStatement("INSERT INTO lena_laba7.users (login, password)" +
                 " VALUES (?, ?)");
         st.setString(1, user.getLogin());

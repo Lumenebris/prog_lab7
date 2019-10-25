@@ -31,7 +31,7 @@ public class ServerSide {
             boolean flag2 = true;
             System.out.println("Команды:");
             System.out.println("1. connect урл_БД порт");
-            System.out.println("    где: урл_БД - строка dev для локального сервера, prod для сервера pg.cs.ifmo.ru или урл в формате JDBC jdbc:postgresql://host:port/database");
+            System.out.println("    где: урл_БД - строка dev для локального сервера или урл в формате JDBC jdbc:postgresql://host:port/database");
             System.out.println("2. connect_file путь_к_файлу порт");
             try {
                 while (flag1 | flag2) {

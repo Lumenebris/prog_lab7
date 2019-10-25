@@ -28,6 +28,7 @@ public class ServerConnection implements Runnable {
         this.manager = manager;
         this.incoming = incoming;
         availableCommands = new HashMap<>();
+        availableCommands.put(LoginCommand.NAME, new LoginCommand(manager));
         availableCommands.put("add_user", new AddUserCommand(manager));
         availableCommands.put(RegisterUserCommand.NAME, new RegisterUserCommand(manager));
         availableCommands.put("show", new ShowCommand(manager));

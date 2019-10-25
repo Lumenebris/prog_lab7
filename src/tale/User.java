@@ -57,7 +57,7 @@ public class User {
 
     public String getEncryptedPassword() {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-224");
+            MessageDigest md = MessageDigest.getInstance("SHA-512");
             byte[] messageDigest = md.digest(password.getBytes());
             BigInteger no = new BigInteger(1, messageDigest);
             String hashtext = no.toString(16);
